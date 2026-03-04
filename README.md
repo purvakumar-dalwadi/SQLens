@@ -1,282 +1,41 @@
-# SQLens — Interactive SQL Visualization Engine
+# SQLens
 
-SQLens is a browser-based SQL execution and visualization environment designed to help users understand how SQL queries execute internally.
+[![Live Demo](https://img.shields.io/badge/Live-Demo-success)](https://purvakumar-dalwadi.github.io/SQLens/)
+![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-yellow)
+![SQLite](https://img.shields.io/badge/Database-SQLite-blue)
+![Storage](https://img.shields.io/badge/Storage-IndexedDB-green)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-It provides a step-by-step visual breakdown of SQL query execution, showing intermediate results for clauses like:
+**SQLens** is a browser-based SQL learning and visualization platform that allows users to create databases, run SQL queries, and visually understand how queries execute step-by-step.
 
-FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
-
-The system runs entirely in the browser using SQLite (via sql.js) and stores workspaces and query history using IndexedDB.
-
----
-
-## Key Features
-
-### 1. Workspace System
-
-Users can create multiple isolated SQL workspaces.
-
-Each workspace stores:
-- Tables
-- Data
-- Query history
-- SQLite database snapshot
-
-Workspaces allow experimentation without affecting other datasets.
+The entire application runs **fully in the browser** using **SQLite compiled to WebAssembly (sql.js)** and stores data locally using **IndexedDB**.
 
 ---
 
-### 2. Interactive Table Editor
+# Features
 
-Users can create and manage tables visually.
+## Workspace Management
+- Create multiple workspaces
+- Each workspace contains its own SQLite database
+- Persistent storage using IndexedDB
 
-Supported actions:
-- Create tables with schema
-- Add rows
-- Edit rows inline
-- Delete rows
-- Import CSV files
-- Delete tables
+## Table Editor
+- Create tables with custom schemas
+- Insert, edit, and delete rows
+- Inline editing support
+- Primary key support
 
-The editor interacts directly with the embedded SQLite engine.
+## SQL Query Runner
+- Execute SQL queries directly in the browser
+- Supports multiple SQL statements
+- Displays results for SELECT queries
+- Shows execution logs for DDL and DML queries
 
----
+## Query Visualization
+Understand how SQL queries execute step-by-step.
 
-### 3. SQL Query Runner
+Visualization includes stages such as:
 
-Users can run any SQL query including:
-
-- SELECT
-- INSERT
-- UPDATE
-- DELETE
-- CREATE TABLE
-- ALTER TABLE
-- DROP TABLE
-
-Multiple statements separated by `;` are supported.
-
-The system:
-1. Parses statements
-2. Executes sequentially
-3. Displays execution results
-4. Shows execution log for multi-statement queries
-
----
-
-### 4. SQL Query Visualization
-
-The most important feature of SQLens is query execution visualization.
-
-For SELECT queries, the system:
-1. Parses the query
-2. Decomposes it into logical steps
-3. Executes each step separately
-4. Displays intermediate results
-
-**Example:**
-
-```sql
-SELECT e.name, d.name
-FROM employees e
-JOIN departments d ON e.department_id = d.id
-WHERE e.salary > 50000
-ORDER BY e.name
-```
-
-Visualization steps:
-
-1. FROM employees
-2. INNER JOIN departments
-3. WHERE salary > 50000
-4. SELECT projection
-5. ORDER BY name
-
-Each step shows:
-- SQL query generated
-- intermediate rows
-- number of rows
-- execution time
-- columns
-
----
-
-### 5. Animated Execution
-
-The visualization engine supports animated transitions between steps.
-
-Animations help users understand:
-- row filtering
-- join results
-- grouping operations
-- sorting
-
-This makes SQL execution easier to learn.
-
----
-
-### 6. Query History
-
-Each workspace stores previously executed queries.
-
-History entries include:
-- query text
-- execution time
-- row count
-- timestamp
-
-Clicking a history item reloads the query into the SQL editor.
-
----
-
-### 7. CSV Import
-
-Users can import datasets using CSV files.
-
-Features:
-- drag and drop
-- preview before import
-- automatic insertion into table
-- batch row insertion
-
----
-
-## System Architecture
-
-The system is organized into modular components.
-
-```
-SQLens
-│
-├── app.js
-├── auth.js
-├── workspace.js
-├── dbEngine.js
-├── queryParser.js
-├── stepBuilder.js
-├── visualizer.js
-├── animationEngine.js
-└── index.html
-```
-
-Each module has a specific responsibility.
-
----
-
-### Core Modules
-
-#### app.js
-
-Main application controller.
-
-Responsibilities:
-- UI interactions
-- navigation between screens
-- query execution
-- visualization trigger
-- table editor integration
-- history loading
-
-It coordinates all other modules.
-
----
-
-auth.js
-
-Handles user authentication.
-
-Features:
-- register users
-- login
-- store sessions
-- manage user identity
-
-Authentication data is stored in IndexedDB.
-
----
-
-workspace.js
-
-Manages workspaces and query history.
-
-Functions:
-- create workspace
-- list workspaces
-- load workspace
-- delete workspace
-- save query history
-- retrieve history
-
-Each workspace stores a serialized SQLite database.
-
----
-
-dbEngine.js
-
-Core database engine.
-
-Uses:
-- sql.js (SQLite compiled to WebAssembly)
-
-Responsibilities:
-- execute SQL statements
-- return query results
-- manage tables
-- import CSV data
-- export database state
-
----
-
-queryParser.js
-
-Parses SELECT queries into components.
-
-Extracts:
-- SELECT columns
-- FROM tables
-- JOIN clauses
-- WHERE conditions
-- GROUP BY
-- HAVING
-- ORDER BY
-- LIMIT
-
-Output is a structured object used by the visualization system.
-
-**Example parsed structure:**
-
-```
-{
-  selectCols: "...",
-  baseFrom: "...",
-  joins: [...],
-  where: "...",
-  groupBy: "...",
-  having: "...",
-  orderBy: "...",
-  limit: "..."
-}
-```
-
----
-
-stepBuilder.js
-
-Builds execution steps from the parsed query.
-
-Each step corresponds to a logical SQL stage.
-
-**Example step:**
-
-```
-{
-  name: "WHERE",
-  sql: "SELECT * FROM employees WHERE salary > 50000",
-  color: "#f472b6"
-}
-```
-
-Supported steps:
 - FROM
 - JOIN
 - WHERE
@@ -286,171 +45,194 @@ Supported steps:
 - ORDER BY
 - LIMIT
 
-The module also executes each step to produce intermediate results.
+## Query History
+- Stores executed queries per workspace
+- Displays execution time and row count
+- Reload previous queries with one click
+
+## CSV Import
+- Import CSV files into tables
+- Preview CSV before importing
+- Automatic column mapping
 
 ---
 
-visualizer.js
+# Tech Stack
 
-Responsible for displaying query execution steps.
-
-Functions:
-- render timeline
-- render step results
-- display SQL for each stage
-- show row counts
-- highlight active step
-
-Users can navigate between steps interactively.
-
----
-
-animationEngine.js
-
-Handles visual animations between steps.
-
-Examples:
-- row appearance
-- row filtering
-- table updates
-- transitions between query stages
-
-This improves learning and comprehension.
-
----
-
-index.html
-
-Defines the UI layout.
-
-Contains screens for:
-- Authentication
-- Dashboard
-- Workspace
-- SQL Editor
-- Visualization Panel
-
-The interface includes:
-- SQL editor
-- table editor
-- visualization timeline
-- result tables
-
----
-
-## Data Storage
-
-SQLens uses two browser storage systems.
-
-### IndexedDB
-
-Stores:
-- users
-- workspaces
-- query history
-
-### SQLite (sql.js)
-
-Stores:
-- tables
-- rows
-- schema
-
-SQLite runs entirely in the browser using WebAssembly.
-
----
-
-## Query Execution Flow
-
-When a query is visualized:
-
-User enters SQL query
-        ↓
-QueryParser parses SQL
-        ↓
-StepBuilder generates execution steps
-        ↓
-Each step executes partial SQL
-        ↓
-Visualizer renders results
-        ↓
-AnimationEngine animates transitions
-
-This allows users to see how SQL queries transform data step-by-step.
-
----
-
-## Example Visualization
-
-Query:
-
-```sql
-SELECT name
-FROM employees
-WHERE salary > 50000
-ORDER BY name;
-```
-
-Steps generated:
-
-1 FROM employees
-2 WHERE salary > 50000
-3 SELECT name
-4 ORDER BY name
-
-Each step shows intermediate results.
-
----
-
-## Technologies Used
-
-### Frontend
-- HTML5
-- CSS3
+Frontend
 - Vanilla JavaScript
+- HTML5
+- CSS
 
-### Database
-- SQLite via sql.js (WebAssembly)
+Database
+- SQLite (via sql.js WebAssembly)
 
-### Storage
+Storage
 - IndexedDB
 
-No backend server is required.
+Architecture
+- Modular plain JavaScript components
 
 ---
 
-## Educational Value
+# Architecture Overview
 
-SQLens is designed primarily for:
-- SQL learners
-- database students
-- teaching query execution
-- understanding relational algebra concepts
+```
+App
+ ├── Auth
+ ├── Workspace
+ ├── DBEngine
+ ├── QueryParser
+ ├── StepBuilder
+ ├── AnimationEngine
+ └── Visualizer
+```
 
-It makes invisible SQL operations visible.
+### App
+Main controller responsible for UI interaction, navigation, query execution, and visualization.
+
+### Auth
+Handles user authentication, registration, and session management.
+
+### Workspace
+Manages workspace creation, database persistence, and query history.
+
+### DBEngine
+Wrapper around SQLite WASM providing:
+
+- table CRUD operations
+- SQL query execution
+- CSV import
+- database persistence
+
+### QueryParser
+Parses SQL SELECT queries into structured objects for visualization.
+
+### StepBuilder
+Converts parsed queries into step-by-step execution stages.
+
+### Visualizer
+Renders the query execution process visually.
+
+### AnimationEngine
+Controls visualization transitions and animations.
 
 ---
 
-## Future Improvements
+# Project Structure
 
-Potential enhancements include:
-- visual join diagrams
-- query execution tree
-- cost estimation
-- index simulation
-- aggregation visualization
-- query plan comparison
+```
+sqlens/
+│
+├── index.html
+│
+├── app.js
+│   Main application controller
+│
+├── auth.js
+│   Authentication and session handling
+│
+├── workspace.js
+│   Workspace and query history storage
+│
+├── dbEngine.js
+│   SQLite engine wrapper
+│
+├── queryParser.js
+│   SQL parser for visualization
+│
+├── stepBuilder.js
+│   Query execution step generator
+│
+├── animationEngine.js
+│   Visualization animation engine
+│
+├── visualizer.js
+│   Renders query visualization
+│
+└── styles.css
+    Application styling
+```
 
 ---
 
-## Summary
+# Installation
 
-SQLens provides an interactive SQL execution environment with visualization capabilities.
+Clone the repository
 
-It helps users:
-- write SQL queries
-- explore relational data
-- understand how queries execute internally
-- visualize intermediate results step-by-step
+```bash
+git clone https://github.com/purvakumar-dalwadi/SQLens.git
+```
 
-The entire system runs client-side in the browser, making it lightweight and easy to deploy.
+Navigate into the project
+
+```bash
+cd sqlens
+```
+
+Open the application
+
+```
+index.html
+```
+
+No server or build process is required.
+
+---
+
+# Example Query
+
+```sql
+SELECT department, COUNT(*)
+FROM employees
+WHERE salary > 50000
+GROUP BY department
+ORDER BY COUNT(*) DESC;
+```
+
+Visualization steps:
+
+```
+1. FROM employees
+2. WHERE salary > 50000
+3. GROUP BY department
+4. SELECT department, COUNT(*)
+5. ORDER BY COUNT(*) DESC
+```
+
+---
+
+# Data Persistence
+
+All data is stored locally in the browser using **IndexedDB**.
+
+Each workspace stores:
+- SQLite database binary
+- table metadata
+- query history
+
+No external server is required.
+
+---
+
+# Limitations
+
+- Visualization currently supports **SELECT queries only**
+- Maximum query result display: **1000 rows**
+- Data is stored locally per browser
+
+---
+
+# Future Improvements
+
+- JOIN visualization improvements
+- Query execution plan visualization
+- ER diagram generator
+- Database export/import
+- Collaborative workspaces
+
+---
+
+# License
+
+MIT License
