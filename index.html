@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQLens — Query Execution Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-bg">
+    <div class="auth-grid"></div>
+    <div class="auth-glow"></div>
+  </div>
+  <div class="auth-container">
+    <div class="auth-brand">
+      <div class="brand-logo">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <rect x="2" y="2" width="14" height="14" rx="2" fill="var(--accent)"/>
+          <rect x="20" y="2" width="14" height="14" rx="2" fill="var(--accent)" opacity="0.5"/>
+          <rect x="2" y="20" width="14" height="14" rx="2" fill="var(--accent)" opacity="0.3"/>
+          <rect x="20" y="20" width="14" height="14" rx="2" fill="var(--accent)" opacity="0.7"/>
+        </svg>
+      </div>
+      <h1 class="brand-name">SQLens</h1>
+      <p class="brand-tagline">Query Execution Visualizer</p>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Sign In</button>
+        <button class="auth-tab" data-tab="register">Register</button>
+      </div>
+
+      <div id="tab-login" class="auth-form-wrap active">
+        <form id="form-login" class="auth-form">
+          <div class="field-group">
+            <label>Username</label>
+            <input type="text" id="login-username" placeholder="your_username" autocomplete="username" required />
+          </div>
+          <div class="field-group">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+          </div>
+          <div id="login-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full">
+            <span class="btn-text">Sign In</span>
+            <span class="btn-loader hidden">▸</span>
+          </button>
+        </form>
+      </div>
+
+      <div id="tab-register" class="auth-form-wrap">
+        <form id="form-register" class="auth-form">
+          <div class="field-group">
+            <label>Username</label>
+            <input type="text" id="reg-username" placeholder="choose_username" autocomplete="username" required />
+          </div>
+          <div class="field-group">
+            <label>Password</label>
+            <input type="password" id="reg-password" placeholder="min 6 characters" autocomplete="new-password" required />
+          </div>
+          <div class="field-group">
+            <label>Confirm Password</label>
+            <input type="password" id="reg-confirm" placeholder="repeat password" autocomplete="new-password" required />
+          </div>
+          <div id="reg-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DASHBOARD SCREEN ═══════════════ -->
+<div id="screen-dashboard" class="screen">
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <div class="brand-logo-sm">
+        <svg width="22" height="22" viewBox="0 0 36 36" fill="none">
+          <rect x="2" y="2" width="14" height="14" rx="2" fill="var(--accent)"/>
+          <rect x="20" y="2" width="14" height="14" rx="2" fill="var(--accent)" opacity="0.5"/>
+          <rect x="2" y="20" width="14" height="14" rx="2" fill="var(--accent)" opacity="0.3"/>
+          <rect x="20" y="20" width="14" height="14" rx="2" fill="var(--accent)" opacity="0.7"/>
+        </svg>
+        <span>SQLens</span>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <span class="user-badge" id="dash-username"></span>
+      <button class="btn btn-ghost btn-sm" id="btn-logout">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="dashboard-body">
+    <div class="dashboard-hero">
+      <h2>Your Workspaces</h2>
+      <p>Each workspace is an isolated SQLite database environment</p>
+    </div>
+
+    <div class="workspace-actions">
+      <button class="btn btn-primary" id="btn-new-workspace">+ New Workspace</button>
+    </div>
+
+    <div id="workspace-grid" class="workspace-grid">
+      <!-- Workspace cards injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal: New Workspace -->
+<div id="modal-new-workspace" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create Workspace</h3>
+      <button class="modal-close" data-modal="modal-new-workspace">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label>Workspace Name</label>
+        <input type="text" id="ws-name" placeholder="e.g. Sales Analytics" />
+      </div>
+      <div class="field-group">
+        <label>Description <span class="optional">(optional)</span></label>
+        <input type="text" id="ws-desc" placeholder="What is this workspace for?" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-new-workspace">Cancel</button>
+      <button class="btn btn-primary" id="btn-create-workspace">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ WORKSPACE SCREEN ═══════════════ -->
+<div id="screen-workspace" class="screen">
+  <!-- Top Navigation Bar -->
+  <header class="top-bar">
+    <div class="top-bar-left">
+      <button class="btn btn-ghost btn-sm" id="btn-back-dash">← Dashboard</button>
+      <div class="breadcrumb">
+        <span id="ws-breadcrumb-name" class="breadcrumb-ws"></span>
+      </div>
+    </div>
+    <div class="top-bar-right">
+      <span class="user-badge" id="ws-username"></span>
+      <button class="btn btn-ghost btn-sm" id="btn-ws-logout">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Main 3-panel layout -->
+  <div class="workspace-layout">
+
+    <!-- Left Panel: Table Sidebar -->
+    <aside class="sidebar" id="table-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Tables</span>
+        <button class="btn-icon" id="btn-new-table" title="New Table">+</button>
+      </div>
+      <div id="table-list" class="table-list">
+        <!-- table items injected -->
+      </div>
+    </aside>
+
+    <!-- Center Panel: Main Content -->
+    <main class="main-panel">
+      <!-- Tabs -->
+      <div class="main-tabs">
+        <button class="main-tab active" data-panel="panel-editor">Data Editor</button>
+        <button class="main-tab" data-panel="panel-query">SQL Query</button>
+        <button class="main-tab" data-panel="panel-visualizer">Visualizer</button>
+      </div>
+
+      <!-- Panel: Data Editor -->
+      <div id="panel-editor" class="main-panel-content active">
+        <div id="editor-placeholder" class="panel-placeholder">
+          <div class="placeholder-icon">⊞</div>
+          <p>Select a table from the sidebar or create a new one</p>
+        </div>
+        <div id="editor-content" class="hidden">
+          <div class="editor-toolbar">
+            <span id="editor-table-name" class="editor-table-title"></span>
+            <div class="editor-actions">
+              <button class="btn btn-sm btn-outline" id="btn-add-row">+ Row</button>
+              <button class="btn btn-sm btn-outline" id="btn-import-csv">↑ CSV</button>
+              <button class="btn btn-sm btn-outline btn-danger" id="btn-delete-table">Delete Table</button>
+            </div>
+          </div>
+          <div id="data-grid-wrap" class="data-grid-wrap">
+            <table id="data-grid" class="data-grid">
+              <thead id="data-grid-head"></thead>
+              <tbody id="data-grid-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: SQL Query -->
+      <div id="panel-query" class="main-panel-content">
+        <div class="query-panel">
+          <div class="query-editor-wrap">
+            <div class="query-editor-header">
+              <span class="editor-label">SQL Editor</span>
+              <div class="query-editor-actions">
+                <span class="query-hint">DDL · DML · SELECT · Ctrl+Enter</span>
+                <button class="btn btn-sm btn-accent" id="btn-run-query">▶ Run</button>
+              </div>
+            </div>
+            <textarea id="sql-editor" class="sql-editor" placeholder="-- Any SQL is supported: CREATE, INSERT, UPDATE, DELETE, SELECT&#10;-- Multiple statements separated by semicolons&#10;&#10;CREATE TABLE employees (id INTEGER PRIMARY KEY, name TEXT, salary REAL);&#10;INSERT INTO employees VALUES (1, 'Alice', 95000);&#10;SELECT * FROM employees WHERE salary > 80000;" spellcheck="false"></textarea>
+            <div id="query-error" class="query-error hidden"></div>
+          </div>
+          <div class="query-result-wrap">
+            <div class="query-result-header">
+              <span class="editor-label">Result</span>
+              <span id="query-result-meta" class="result-meta"></span>
+            </div>
+            <div id="query-result-table" class="query-result-table">
+              <div class="result-placeholder">Run a query to see results</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel: Visualizer -->
+      <div id="panel-visualizer" class="main-panel-content">
+        <div class="viz-panel">
+          <div class="viz-header">
+            <span class="editor-label">Execution Visualizer</span>
+            <button class="btn btn-sm btn-accent" id="btn-visualize">▶ Visualize Query</button>
+          </div>
+          <div id="viz-steps-timeline" class="viz-timeline hidden">
+            <!-- Step buttons injected -->
+          </div>
+          <div id="viz-content" class="viz-content">
+            <div class="result-placeholder">Run a query from the SQL tab first, then click Visualize</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Panel: Query History -->
+    <aside class="history-panel" id="history-panel">
+      <div class="sidebar-header">
+        <span class="sidebar-title">History</span>
+        <button class="btn-icon" id="btn-clear-history" title="Clear History">✕</button>
+      </div>
+      <div id="query-history-list" class="history-list">
+        <!-- history items -->
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Modal: Create Table -->
+<div id="modal-create-table" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>Create Table</h3>
+      <button class="modal-close" data-modal="modal-create-table">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label>Table Name</label>
+        <input type="text" id="tbl-name" placeholder="e.g. employees" />
+      </div>
+      <div class="schema-builder">
+        <div class="schema-header">
+          <span>Columns</span>
+          <button class="btn btn-sm btn-outline" id="btn-add-column">+ Column</button>
+        </div>
+        <div id="schema-columns" class="schema-columns">
+          <!-- column rows injected -->
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-create-table">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-table">Create Table</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Row -->
+<div id="modal-add-row" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Row</h3>
+      <button class="modal-close" data-modal="modal-add-row">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="add-row-fields" class="add-row-fields">
+        <!-- dynamic fields -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-add-row">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-row">Insert Row</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Import CSV -->
+<div id="modal-import-csv" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Import CSV</h3>
+      <button class="modal-close" data-modal="modal-import-csv">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text">First row must be column headers matching the table schema.</p>
+      <div class="csv-drop-zone" id="csv-drop-zone">
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none" />
+        <div class="drop-zone-inner">
+          <div class="drop-icon">📄</div>
+          <p>Drop CSV file here or <button class="btn-link" id="btn-browse-csv">browse</button></p>
+          <span id="csv-filename" class="csv-filename"></span>
+        </div>
+      </div>
+      <div id="csv-preview" class="csv-preview hidden"></div>
+      <div id="csv-error" class="form-error hidden"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-import-csv">Cancel</button>
+      <button class="btn btn-primary" id="btn-do-import">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Global Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- Scripts — order matters: load dependencies first -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="auth.js"></script>
+<script src="workspace.js"></script>
+<script src="dbEngine.js"></script>
+<script src="queryParser.js"></script>
+<script src="stepBuilder.js"></script>
+<script src="animationEngine.js"></script>
+<script src="visualizer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
