@@ -55,7 +55,7 @@ const App = {
         );
         Auth.setSession(user); this._state.session=Auth.getSession();
         this._show('dashboard'); this.loadDashboard();
-      } catch(err){ showErr(errEl,err.message); }
+      } catch(err){ this._showErr(errEl,err.message); }
     });
     document.getElementById('form-register').addEventListener('submit', async e=>{
       e.preventDefault();
@@ -66,7 +66,7 @@ const App = {
         const user=await Auth.register(document.getElementById('reg-username').value,p);
         Auth.setSession(user); this._state.session=Auth.getSession();
         this._show('dashboard'); this.loadDashboard();
-      } catch(err){ showErr(errEl,err.message); }
+      } catch(err){ this._showErr(errEl,err.message); }
     });
   },
   logout(){
@@ -181,7 +181,7 @@ const App = {
   renderDataGrid(name){
     let schema,data;
     try { schema=DBEngine.getTableSchema(name); data=DBEngine.getTableData(name); }
-    catch(err){ toast('Error: '+err.message,'error'); return; }
+    catch(err){ this._toast('Error: '+err.message,'error'); return; }
 
     document.getElementById('data-grid-head').innerHTML=`<tr>
       ${schema.map(c=>`<th title="${this._esc(c.type)}${c.pk?' PK':''}">
@@ -216,11 +216,11 @@ const App = {
         wv=pks.map(c=>row[schema.findIndex(s=>s.name===c.name)]);
       } else {
         const r=DBEngine.executeQuery(`SELECT rowid,* FROM "${name}" LIMIT 1000`);
-        if(!r.rows[ri]){ toast('Cannot identify row','error'); return; }
+        if(!r.rows[ri]){ this._toast('Cannot identify row','error'); return; }
         wc='rowid = ?'; wv=[r.rows[ri][0]];
       }
       await DBEngine.deleteRow(name,wc,wv); this.renderDataGrid(name); this._toast('Row deleted');
-    } catch(err){ toast(err.message,'error'); }
+    } catch(err){ this._toast(err.message,'error'); }
   },
 
   editRow(name,schema,data,ri){
@@ -243,7 +243,7 @@ const App = {
           wv=pks.map(c=>row[schema.findIndex(s=>s.name===c.name)]);
         } else { wc=schema.map(c=>`"${c.name}" = ?`).join(' AND '); wv=[...row]; }
         await DBEngine.updateRow(name,nd,wc,wv); this.renderDataGrid(name); this._toast('Row updated','success');
-      } catch(err){ toast(err.message,'error'); }
+      } catch(err){ this._toast(err.message,'error'); }
     });
     tr.querySelector('.cancel-inline').addEventListener('click',()=>this.renderDataGrid(name));
   },
@@ -269,9 +269,9 @@ const App = {
     document.getElementById('btn-add-column').addEventListener('click',()=>this.addColRow());
     document.getElementById('btn-save-table').addEventListener('click',async()=>{
       const name=document.getElementById('tbl-name').value.trim();
-      if(!name){ toast('Table name required','error'); return; }
+      if(!name){ this._toast('Table name required','error'); return; }
       const rows=document.querySelectorAll('#schema-columns .schema-col-row');
-      if(!rows.length){ toast('Add at least one column','error'); return; }
+      if(!rows.length){ this._toast('Add at least one column','error'); return; }
       const cols=Array.from(rows).map(r=>({
         name:r.querySelector('.col-n').value.trim(),
         type:r.querySelector('.col-t').value,
@@ -279,20 +279,20 @@ const App = {
         notnull:false,
         autoincrement:r.querySelector('.col-pk').checked&&r.querySelector('.col-t').value==='INTEGER'
       }));
-      if(cols.some(c=>!c.name)){ toast('All columns need a name','error'); return; }
+      if(cols.some(c=>!c.name)){ this._toast('All columns need a name','error'); return; }
       try {
         await DBEngine.createTable(name,cols);
         this._closeModal('modal-create-table');
         this._state.activeTable=name; this.refreshTableList(); this.loadTableEditor(name); this._switchTab('panel-editor');
         this._toast(`Table "${name}" created`,'success');
-      } catch(err){ toast(err.message,'error'); }
+      } catch(err){ this._toast(err.message,'error'); }
     });
   },
 
   /* ===== EDITOR ACTIONS (Add Row / CSV / Delete Table) ===== */
   bindEditorActions(){
     document.getElementById('btn-add-row').addEventListener('click',()=>{
-      if(!state.activeTable) return;
+      if(!this._state.activeTable) return;
       const schema=DBEngine.getTableSchema(this._state.activeTable);
       const div=document.getElementById('add-row-fields'); div.innerHTML='';
       schema.forEach(col=>{
@@ -442,19 +442,19 @@ const App = {
         } else {
           log.push({ ok: true, type: result.type, msg: result.detail, duration: result.duration });
           // DDL/DML — refresh sidebar
-          refreshTableList();
+          this.refreshTableList();
           // If active table was dropped, reset editor
-          if (result.type === 'DROP' && state.activeTable) {
+          if (result.type === 'DROP' && this._state.activeTable) {
             const tables = DBEngine.listTables();
-            if (!tables.includes(state.activeTable)) {
-              state.activeTable = null;
+            if (!tables.includes(this._state.activeTable)) {
+              this._state.activeTable = null;
               document.getElementById('editor-placeholder').classList.remove('hidden');
               document.getElementById('editor-content').classList.add('hidden');
             }
           }
           // If active table was modified, reload it
-          if ((result.type === 'INSERT' || result.type === 'UPDATE' || result.type === 'DELETE' || result.type === 'ALTER') && state.activeTable) {
-            renderDataGrid(state.activeTable);
+          if ((result.type === 'INSERT' || result.type === 'UPDATE' || result.type === 'DELETE' || result.type === 'ALTER') && this._state.activeTable) {
+            this.renderDataGrid(this._state.activeTable);
           }
         }
       } catch(err) {
@@ -558,7 +558,7 @@ const App = {
   /* ===== VISUALIZER ===== */
   async runVisualize(){
     const sql = document.getElementById('sql-editor').value.trim();
-    if (!sql) { toast('Enter a query in the SQL tab first','error'); return; }
+    if (!sql) { this._toast('Enter a query in the SQL tab first','error'); return; }
 
     // Visualizer only supports SELECT
     const stmts = this.splitStatements(sql);
@@ -577,7 +577,7 @@ const App = {
 
     let parsed;
     try { parsed = QueryParser.parse(selectStmt); }
-    catch(err) { toast('Parse error: '+err.message,'error'); return; }
+    catch(err) { this._toast('Parse error: '+err.message,'error'); return; }
 
     const vizEl = document.getElementById('viz-content');
     vizEl.innerHTML = '<div class="result-placeholder"><div class="spinner"></div> Building execution steps…</div>';
