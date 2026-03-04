@@ -38,18 +38,36 @@ const Auth = {
   async hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+
+    const cryptoObj = (typeof globalThis !== 'undefined' && globalThis.crypto) ? globalThis.crypto : null;
+    const subtle = cryptoObj && cryptoObj.subtle ? cryptoObj.subtle : null;
+
+    if (subtle && typeof subtle.digest === 'function') {
+      const hash = await subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    // Fallback hash for environments without Web Crypto (e.g. file://)
+    let h1 = 0, h2 = 0;
+    for (let i = 0; i < password.length; i++) {
+      const ch = password.charCodeAt(i);
+      h1 = (h1 * 31 + ch) | 0;
+      h2 = (h2 * 17 + ch) | 0;
+    }
+    return (h1 >>> 0).toString(16) + (h2 >>> 0).toString(16);
   },
 
   generateId() {
-    return crypto.randomUUID ? crypto.randomUUID()
-      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-          const r = Math.random() * 16 | 0;
-          return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
+    const cryptoObj = (typeof globalThis !== 'undefined' && globalThis.crypto) ? globalThis.crypto : null;
+    if (cryptoObj && typeof cryptoObj.randomUUID === 'function') {
+      return cryptoObj.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
   },
 
   idbGet(store, index, value) {
