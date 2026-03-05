@@ -1,6 +1,6 @@
 # SQLens
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-success)](https://purvakumar-dalwadi.github.io/SQLens/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-success)](https://sq-lens.vercel.app/)
 ![JavaScript](https://img.shields.io/badge/JavaScript-Vanilla-yellow)
 ![SQLite](https://img.shields.io/badge/Database-SQLite-blue)
 ![Storage](https://img.shields.io/badge/Storage-IndexedDB-green)
